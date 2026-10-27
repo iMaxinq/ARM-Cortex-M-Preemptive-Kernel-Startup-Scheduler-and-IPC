@@ -1,0 +1,86 @@
+#include <stdint.h>
+
+/* import memory boundary symbols defined in linker/linker.ld (use their addresses -> &symbol) */
+extern uint32_t _estack;
+extern uint32_t _sidata;
+extern uint32_t _sdata;
+extern uint32_t _edata;
+extern uint32_t _sbss;
+extern uint32_t _ebss;
+
+extern int main(void);
+
+void Reset_Handler(void); // bootstrap
+void Default_Handler(void);
+
+/* weak aliases -> call Default_Handler until implemented */
+void NMI_Handler(void)        __attribute__((weak, alias("Default_Handler")));
+void HardFault_Handler(void)  __attribute__((weak, alias("Default_Handler")));
+void MemManage_Handler(void)  __attribute__((weak, alias("Default_Handler")));
+void BusFault_Handler(void)   __attribute__((weak, alias("Default_Handler")));
+void UsageFault_Handler(void) __attribute__((weak, alias("Default_Handler")));
+void SVC_Handler(void)        __attribute__((weak, alias("Default_Handler")));
+void DebugMon_Handler(void)   __attribute__((weak, alias("Default_Handler")));
+void PendSV_Handler(void)     __attribute__((weak, alias("Default_Handler")));
+void SysTick_Handler(void)    __attribute__((weak, alias("Default_Handler")));
+
+/* external IRQ handlers for QEMU mps2-an385 UART0 */
+void UART0RX_Handler(void)    __attribute__((weak, alias("Default_Handler")));
+void UART0TX_Handler(void)    __attribute__((weak, alias("Default_Handler")));
+
+/* vector table -> placed in ".isr_vector" so linker.ld puts it at 0x00000000 in Flash. */
+__attribute__((section(".isr_vector"), used))
+const uintptr_t vector_table[] = {
+    /* Core ARM Cortex-M3 System Exceptions (Indices 0 to 15) */
+    (uintptr_t)&_estack,            /* 0: Initial Main Stack Pointer (MSP) */
+    (uintptr_t)Reset_Handler,       /* 1: Reset Handler (Entry point at boot) */
+    (uintptr_t)NMI_Handler,         /* 2: Non-Maskable Interrupt Handler */
+    (uintptr_t)HardFault_Handler,   /* 3: Hard Fault Handler (Milestone 3) */
+    (uintptr_t)MemManage_Handler,   /* 4: MPU Fault Handler */
+    (uintptr_t)BusFault_Handler,    /* 5: Bus Fault Handler */
+    (uintptr_t)UsageFault_Handler,  /* 6: Usage Fault Handler */
+    0,                              /* 7: Reserved */
+    0,                              /* 8: Reserved */
+    0,                              /* 9: Reserved */
+    0,                              /* 10: Reserved */
+    (uintptr_t)SVC_Handler,         /* 11: SVCall Handler */
+    (uintptr_t)DebugMon_Handler,    /* 12: Debug Monitor Handler */
+    0,                              /* 13: Reserved */
+    (uintptr_t)PendSV_Handler,      /* 14: PendSV Handler (Milestone 4 context switch) */
+    (uintptr_t)SysTick_Handler,     /* 15: SysTick Handler (Milestone 3 1ms heartbeat) */
+
+    /* External Interrupts (IRQ 0, 1, ...) for MPS2-AN385 (Milestone 2 UART) */
+    (uintptr_t)UART0RX_Handler,     /* 16 (IRQ 0): UART 0 Receive Interrupt */
+    (uintptr_t)UART0TX_Handler,     /* 17 (IRQ 1): UART 0 Transmit Interrupt */
+};
+
+/* bootstrap implementation */
+void Reset_Handler(void)
+{
+    /* copy initialized data (.data) from Flash (_sidata) to RAM (_sdata to _edata) */
+    uint32_t *src = &_sidata;
+    uint32_t *dst = &_sdata;
+
+    while (dst < &_edata) {
+        *dst++ = *src++;
+    }
+
+    /* zero out uninitialized data (.bss) in RAM (_sbss to _ebss) */
+    dst = &_sbss;
+    while (dst < &_ebss) {
+        *dst++ = 0U;
+    }
+
+    main();
+
+    /* trap the CPU if main() ever returns */
+    while (1) {
+    }
+}
+
+/* catches any unhandled interrupts or faults */
+void Default_Handler(void)
+{
+    while (1) {
+    }
+}
