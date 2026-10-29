@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// not the actual buffer. The *buffer pointer points to the actual buffer (array) 
 typedef struct {
     uint8_t *buffer;          // Pointer to backing byte array 
     size_t capacity;          // Total size of the backing array

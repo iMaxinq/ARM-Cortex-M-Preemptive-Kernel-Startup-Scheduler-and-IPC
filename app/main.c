@@ -1,30 +1,32 @@
-#include <stdint.h>
-
-/* .rodata, FLASH */
-const uint32_t flash_const = 0xCAFEBABE;
-
-/* .data, FLASH -> RAM */
-volatile uint32_t data_var = 0xDEADBEEF;
-
-/* .bss, initialized in RAM */
-volatile uint32_t bss_var;
-
-/* .bss because initialized to 0 */
-volatile uint32_t loop_counter = 0;
+#include "uart.h"
+#include "kprintf.h"
 
 int main(void)
 {
-    // taking &flash_const forces the linker to keep flash_const in Flash 
-    const volatile uint32_t *p = &flash_const;
-    data_var = *p + 1; /* becomes 0xCAFEBABF */
+    /* 1. Initialize UART0 hardware and enable RX interrupt (IRQ 0) */
+    uart_init();
 
-    if (flash_const == 0xCAFEBABE) {
-        data_var += 1; /* becomes 0xCAFEBAC0 */
-        bss_var +=1;
-    }
+    /* 2. Connect kprintf() to uart_putc() */
+    kprintf_init(uart_putc);
 
+    /* 3. Print the Milestone 2 startup banner (uses TX pipeline) */
+    kprintf("========================================\n");
+    kprintf("Booting miniRTOS - Milestone %d\n", 2);
+    kprintf("UART0 base: %x | Type keys to echo:\n", 0x40004000U);
+    kprintf("========================================\n");
+
+    /* 4. Main loop: check the RX ring buffer and echo every key typed */
     while (1) {
-        loop_counter++;
+        char c;
+        if (uart_getc(&c)) {
+            /* A key was popped from the ring buffer! Echo it back to the screen: */
+            if (c == '\r') {
+                /* In QEMU terminal, pressing Enter sends '\r'. Print a newline: */
+                uart_putc('\n');
+            } else {
+                uart_putc(c);
+            }
+        }
     }
 
     return 0;

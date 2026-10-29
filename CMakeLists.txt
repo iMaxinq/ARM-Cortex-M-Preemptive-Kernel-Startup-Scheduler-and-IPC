@@ -4,11 +4,13 @@ project(minirtos C ASM)
 # create the firmware executable target
 add_executable(
     minirtos.elf
-    startup/startup.c
     app/main.c
+    startup/startup.c
+    drivers/uart.c
+    lib/kprintf.c
+    lib/ringbuffer.c
 )
 
-# include directory for future milestones (include/minirtos.h)
 target_include_directories(minirtos.elf PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Compiler flags:
