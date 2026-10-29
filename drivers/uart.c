@@ -41,19 +41,19 @@ static ringbuf_t s_rx_rb; // the struct that holds the ring buffer state (head, 
 
 void uart_init(void)
 {
-    /* 1. Initialize the software RX ring buffer */
+    /* initialize RX ring buffer */
     ringbuf_init(&s_rx_rb, s_rx_buf, UART_RX_BUF_SIZE);
 
-    /* 2. Configure baud rate divider (25 MHz system clock / 115200 baud = 217) */
+    /* baud rate divider (25 MHz system clock / 115200 baud = 217) */
     UART0->BAUDDIV = 217UL;
 
-    /* 3. Clear any pending RX interrupt flag */
+    /* clear any pending RX interrupt flag */
     UART0->INTCLEAR = UART_INTCLEAR_RX;
 
-    /* 4. Enable TX, RX, and the RX interrupt in the UART peripheral */
+    /* enable TX, RX, and the RX interrupt in the UART peripheral */
     UART0->CTRL = UART_CTRL_TX_EN | UART_CTRL_RX_EN | UART_CTRL_RX_IRQ_EN;
 
-    /* 5. Enable IRQ 0 (UART0RX) inside the ARM Cortex-M3 NVIC */
+    /* enable IRQ 0 (UART0RX) inside the ARM Cortex-M3 NVIC */
     NVIC_ISER0 = (1UL << UART0_RX_IRQn);
 }
 
@@ -66,11 +66,11 @@ void uart_putc(char c)
         UART0->DATA = (uint32_t)'\r';
     }
 
-    /* Wait until the UART transmit buffer is not full */
+    /* wait until the UART transmit buffer is not full */
     while (UART0->STATE & UART_STATE_TX_FULL) {
     }
 
-    /* Write character to the hardware data register */
+    /* write character to the hardware data register */
     UART0->DATA = (uint32_t)(uint8_t)c;
 }
 
@@ -82,15 +82,15 @@ bool uart_getc(char *c)
     return ringbuf_pop(&s_rx_rb, (uint8_t *)c);
 }
 
-/* --- Hardware Interrupt Service Routine (overrides weak alias in startup.c) --- */
+/* Hardware Interrupt Service Routine (overrides weak alias in startup.c). Is called when UART0RX interrupt is received */
 void UART0RX_Handler(void)
 {
-    /* 1. Read the received byte from the hardware DATA register */
+    /* read the received byte from the hardware DATA register */
     uint8_t data = (uint8_t)(UART0->DATA & 0xFFUL);
 
-    /* 2. Clear the RX interrupt flag in the UART peripheral */
+    /* clear the RX interrupt flag in the UART peripheral */
     UART0->INTCLEAR = UART_INTCLEAR_RX;
 
-    /* 3. Push the byte into the ring buffer for main() to consume later */
+    /* ush the byte into the ring buffer for main() to consume later */
     (void)ringbuf_push(&s_rx_rb, data);
 }
