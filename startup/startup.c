@@ -78,7 +78,7 @@ void Reset_Handler(void)
     }
 }
 
-/* catches any unhandled interrupts or faults */
+// default handler for unimplemented IRQs
 void Default_Handler(void)
 {
     while (1) {

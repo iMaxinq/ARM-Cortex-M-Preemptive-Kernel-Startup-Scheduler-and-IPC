@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.20)
 project(minirtos C ASM)
 
 # create the firmware executable target
-add_executable(
-    minirtos.elf
+add_executable(minirtos.elf
     app/main.c
     startup/startup.c
     drivers/uart.c
     lib/kprintf.c
     lib/ringbuffer.c
+    kernel/port/systick.c
+    kernel/port/fault.c
 )
 
 target_include_directories(minirtos.elf PRIVATE ${CMAKE_SOURCE_DIR}/include)
