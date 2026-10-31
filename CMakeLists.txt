@@ -10,6 +10,8 @@ add_executable(minirtos.elf
     lib/ringbuffer.c
     kernel/port/systick.c
     kernel/port/fault.c
+    kernel/port/port.c
+    kernel/task.c
 )
 
 target_include_directories(minirtos.elf PRIVATE ${CMAKE_SOURCE_DIR}/include)

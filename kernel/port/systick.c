@@ -1,4 +1,5 @@
 #include "systick.h"
+#include "task.h"
 
 /* =========================================================================
  * ARM Cortex-M3 SysTick Register Map (Base Address: 0xE000E010)
@@ -55,4 +56,9 @@ uint32_t systick_get_ticks(void)
 void SysTick_Handler(void)
 {
     s_ticks++;
+
+    /* Every 1 ms tick, pick the next task in round-robin order and pend PendSV */
+    if (task_schedule_next()) {
+        port_trigger_pendsv();
+    }
 }
